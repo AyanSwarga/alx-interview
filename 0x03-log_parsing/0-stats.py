@@ -1,61 +1,68 @@
 #!/usr/bin/python3
-"""log parsing module."""
+"""Write a script that reads stdin line by line and computes metrics:
+
+Input format: <IP Address> - [<date>] "GET /projects/260 HTTP/1.1"
+<status code> <file size> (if the format is not this one, the line
+must be skipped)
+After every 10 lines and/or a keyboard interruption (CTRL + C),
+print these statistics from the beginning:
+Total file size: File size: <total size>
+where <total size> is the sum of all previous <file size>
+(see input format above)
+Number of lines by status code:
+possible status code: 200, 301, 400, 401, 403, 404, 405 and 500
+if a status code doesn’t appear or is not an integer,
+don’t print anything for this status code
+format: <status code>: <number>
+status codes should be printed in ascending order
+
+line list = [<IP Address>, -, [<date>], "GET /projects/260 HTTP/1.1",
+<status code>, <file size>]
+"""
 
 
-def processLine(line: str, status_codes: dict) -> int:
-    """
-    The line processing function.
-    Extracts the status code and the file size
-    from the line.
-    """
-    if 'GET /projects' in line:
-        try:
-            fsize = int(line.split()[-1])
-            status = int(line.split()[-2])
-            if status in status_codes.keys():
-                status_codes[status] += 1
-            return fsize
-        except ValueError:
-            pass
-    return 0
+import sys
 
+# store the count of all status codes in a dictionary
+status_codes_dict = {'200': 0, '301': 0, '400': 0, '401': 0, '403': 0,
+                     '404': 0, '405': 0, '500': 0}
 
-def logLines(total_file_size: int, status_codes: dict):
-    """Logs the processed lines to the standard output."""
-    print(f'File size: {total_file_size}', flush=True)
-    for code in sorted(status_codes):
-        num = status_codes.get(code, 0)
-        if num > 0:
-            print(f'{code}: {num}', flush=True)
+total_size = 0
+count = 0  # keep count of the number lines counted
 
+try:
+    for line in sys.stdin:
+        line_list = line.split(" ")
 
-def run():
-    """The entrance function"""
-    total_file_size = 0
-    nlines = 0
-    status_codes = {
-            200: 0,
-            301: 0,
-            400: 0,
-            401: 0,
-            403: 0,
-            404: 0,
-            405: 0,
-            500: 0
-            }
-    try:
-        while True:
-            line = input()
-            total_file_size += processLine(
-                    line,
-                    status_codes
-                    )
-            nlines += 1
-            if nlines % 10 == 0:
-                logLines(total_file_size, status_codes)
-    except (KeyboardInterrupt, EOFError):
-        logLines(total_file_size, status_codes)
+        if len(line_list) > 4:
+            status_code = line_list[-2]
+            file_size = int(line_list[-1])
 
+            # check if the status code receive exists in the dictionary and
+            # increment its count
+            if status_code in status_codes_dict.keys():
+                status_codes_dict[status_code] += 1
 
-if __name__ == '__main__':
-    run()
+            # update total size
+            total_size += file_size
+
+            # update count of lines
+            count += 1
+
+        if count == 10:
+            count = 0  # reset count
+            print('File size: {}'.format(total_size))
+
+            # print out status code counts
+            for key, value in sorted(status_codes_dict.items()):
+                if value != 0:
+                    print('{}: {}'.format(key, value))
+
+except Exception as err:
+    pass
+
+finally:
+    print('File size: {}'.format(total_size))
+    for key, value in sorted(status_codes_dict.items()):
+        if value != 0:
+            print('{}: {}'.format(key, value))
