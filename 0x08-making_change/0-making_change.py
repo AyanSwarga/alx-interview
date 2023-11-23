@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+"""Making a change interview"""
 def makeChange(coins, total):
     """Function that makes the change"""
     if total < 0:
