@@ -2,6 +2,7 @@
 
 """Making a change interview question"""
 
+
 def makeChange(coins, total):
     """Function that makes the change"""
     if total < 0:
